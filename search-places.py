@@ -2,6 +2,7 @@ import googlemaps
 from datetime import datetime
 import json
 import pandas as pd
+import time
 from pandas import json_normalize
 import os.path
 import xlsxwriter
@@ -14,11 +15,11 @@ import xlsxwriter
 google_api_key = 'YOUR_API_KEY'
 
 # Address to center search at.
-search_around_address = '1 Dock St, Plattsburgh, NY 12901'
+search_around_address = ''
 
 # What type of businesses to search for
 #   https://developers.google.com/maps/documentation/places/web-service/supported_types
-search_for = 'restaurants'
+search_for = ''
 
 # Limit pages.  To avoid overages, set a value here
 limit_pages = 100
@@ -27,6 +28,17 @@ limit_pages = 100
 # Will attempt to parse local files if they exist
 no_requests = False
 
+if not google_api_key:
+    print("You must provide a Google API Key")
+    exit()
+
+if not search_around_address:
+    print("You must provide an address to search near")
+    exit()
+
+if not search_for:
+    print("You must provide a category to search for")
+    exit()
 
 def get_places_nearby(location, search_for, next_page_token):
 
@@ -60,7 +72,7 @@ gmaps = googlemaps.Client(key=google_api_key)
 dataframe = pd.DataFrame()
 
 # Set data dir
-data_dir = f"./data/{search_around_address}"
+data_dir = f"./data/{search_for}/{search_around_address}"
 
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -110,6 +122,12 @@ else:
         # Look for a next page token
         if "next_page_token" in places_json:
             next_page_token = places_json['next_page_token']
+
+            # Wait 4 seconds  ( There is a short delay between when a next_page_token is
+            # issued, and when it will become valid. Requesting the next page before it is
+            # available will return an INVALID_REQUEST response )
+            time.sleep(4)
+
         else:
             next_page_token = ''
 
